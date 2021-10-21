@@ -99,7 +99,7 @@ webhooks:
       namespace: system
       path: /mutate-v1alpha1-service-exports
   failurePolicy: Fail
-  name: mutate-mesh.consul.hashicorp.com
+  name: mutate-serviceexports.consul.hashicorp.com
   rules:
   - apiGroups:
     - consul.hashicorp.com
@@ -109,7 +109,7 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - mesh
+    - serviceexports
   sideEffects: None
 - admissionReviewVersions:
   - v1beta1

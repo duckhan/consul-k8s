@@ -181,5 +181,5 @@ func (in *ServiceExports) Validate(_ bool) error {
 	return nil
 }
 
-func (in *ServiceExports) DefaultNamespaceFields(_ bool, _ string, _ bool, _ string) {
+func (in *ServiceExports) DefaultNamespaceFields(_ common.ConsulMeta) {
 }
