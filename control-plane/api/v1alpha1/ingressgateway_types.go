@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -67,6 +68,7 @@ type IngressListener struct {
 	// Port declares the port on which the ingress gateway should listen for traffic.
 	Port int `json:"port,omitempty"`
 
+	Config map[string]string `json:"config"`
 	// Protocol declares what type of traffic this listener is expected to
 	// receive. Depending on the protocol, a listener might support multiplexing
 	// services over a single port, or additional discovery chain features. The
@@ -195,12 +197,22 @@ func (in *IngressGateway) ToConsul(datacenter string) capi.ConfigEntry {
 	for _, l := range in.Spec.Listeners {
 		listeners = append(listeners, l.toConsul())
 	}
+	annotationMeta := "consul.hashicorp.com/service-meta-"
+	metaData := meta(datacenter)
+
+	objectMeta := in.GetObjectMeta()
+	for k, v := range objectMeta.GetAnnotations() {
+		if strings.HasPrefix(k, annotationMeta) && strings.TrimPrefix(k, annotationMeta) != "" {
+			metaData[strings.TrimPrefix(k, annotationMeta)] = v
+		}
+	}
+
 	return &capi.IngressGatewayConfigEntry{
 		Kind:      in.ConsulKind(),
 		Name:      in.ConsulName(),
 		TLS:       in.Spec.TLS.toConsul(),
 		Listeners: listeners,
-		Meta:      meta(datacenter),
+		Meta:      metaData,
 	}
 }
 
@@ -210,7 +222,7 @@ func (in *IngressGateway) MatchesConsul(candidate capi.ConfigEntry) bool {
 		return false
 	}
 	// No datacenter is passed to ToConsul as we ignore the Meta field when checking for equality.
-	return cmp.Equal(in.ToConsul(""), configEntry, cmpopts.IgnoreFields(capi.IngressGatewayConfigEntry{}, "Partition", "Namespace", "Meta", "ModifyIndex", "CreateIndex"), cmpopts.IgnoreUnexported(), cmpopts.EquateEmpty())
+	return cmp.Equal(in.ToConsul(""), configEntry, cmpopts.IgnoreFields(capi.IngressGatewayConfigEntry{}, "Partition", "Namespace", "ModifyIndex", "CreateIndex"), cmpopts.IgnoreUnexported(), cmpopts.EquateEmpty())
 }
 
 func (in *IngressGateway) Validate(namespacesEnabled bool) error {
